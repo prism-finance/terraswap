@@ -14,10 +14,6 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum SwapOperation {
-    NativeSwap {
-        offer_denom: String,
-        ask_denom: String,
-    },
     TerraSwap {
         offer_asset_info: AssetInfo,
         ask_asset_info: AssetInfo,
@@ -27,9 +23,6 @@ pub enum SwapOperation {
 impl SwapOperation {
     pub fn get_target_asset_info(&self) -> AssetInfo {
         match self {
-            SwapOperation::NativeSwap { ask_denom, .. } => AssetInfo::NativeToken {
-                denom: ask_denom.clone(),
-            },
             SwapOperation::TerraSwap { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
@@ -80,6 +73,10 @@ pub enum QueryMsg {
         offer_amount: Uint128,
         operations: Vec<SwapOperation>,
     },
+    ReverseSimulateSwapOperations {
+        ask_amount: Uint128,
+        operations: Vec<SwapOperation>,
+    },
 }
 
 // We define a custom struct for each query response
@@ -93,3 +90,7 @@ pub struct ConfigResponse {
 pub struct SimulateSwapOperationsResponse {
     pub amount: Uint128,
 }
+
+/// We currently take no arguments for migrations
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}

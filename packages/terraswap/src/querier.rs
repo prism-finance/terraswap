@@ -1,11 +1,12 @@
 use crate::asset::{Asset, AssetInfo, PairInfo};
-use crate::factory::QueryMsg as FactoryQueryMsg;
+use crate::factory::{NativeTokenDecimalsResponse, QueryMsg as FactoryQueryMsg};
 use crate::pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse, SimulationResponse};
 
 use cosmwasm_std::{
     to_binary, Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, QuerierWrapper,
     QueryRequest, StdResult, Uint128, WasmQuery,
 };
+
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
 
 pub fn query_balance(
@@ -46,14 +47,29 @@ pub fn query_token_balance(
     Ok(res.balance)
 }
 
-pub fn query_supply(querier: &QuerierWrapper, contract_addr: Addr) -> StdResult<Uint128> {
-    // load price form the oracle
+pub fn query_token_info(
+    querier: &QuerierWrapper,
+    contract_addr: Addr,
+) -> StdResult<TokenInfoResponse> {
     let token_info: TokenInfoResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: contract_addr.to_string(),
         msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
     }))?;
 
-    Ok(token_info.total_supply)
+    Ok(token_info)
+}
+
+pub fn query_native_decimals(
+    querier: &QuerierWrapper,
+    factory_contract: Addr,
+    denom: String,
+) -> StdResult<u8> {
+    let res: NativeTokenDecimalsResponse =
+        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: factory_contract.to_string(),
+            msg: to_binary(&FactoryQueryMsg::NativeTokenDecimals { denom })?,
+        }))?;
+    Ok(res.decimals)
 }
 
 pub fn query_pair_info(
@@ -93,4 +109,16 @@ pub fn reverse_simulate(
             ask_asset: ask_asset.clone(),
         })?,
     }))
+}
+
+pub fn query_pair_info_from_pair(
+    querier: &QuerierWrapper,
+    pair_contract: Addr,
+) -> StdResult<PairInfo> {
+    let pair_info: PairInfo = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: pair_contract.to_string(),
+        msg: to_binary(&PairQueryMsg::Pair {})?,
+    }))?;
+
+    Ok(pair_info)
 }
